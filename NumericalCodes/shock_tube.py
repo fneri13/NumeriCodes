@@ -1,12 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from .riemann_problem import RiemannProblem
+from NumericalCodes.riemann_problem import RiemannProblem
 import pickle
 
 
 class ShockTube:
     def __init__(self, x, t):
+        """
+        Initialize the problem with space and time arrays.
+        """
         self.xNodes = x
         self.nNodes = len(x)
         self.dx = x[1]-x[0]
