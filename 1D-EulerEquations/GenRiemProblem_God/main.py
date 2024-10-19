@@ -36,7 +36,6 @@ tube.InstantiateSolutionArrays()
 tube.InstantiateSolutionArraysConservatives()
 tube.InitialConditionsArrays(inCond)
 tube.SetBoundaryConditions('reflective', 0)
-
 tube.SolveSystem(flux_method='Godunov')
 tube.SaveSolution(folder_name='solutions', file_name='test_tMax_%.1f' %TIME_MAX)
 

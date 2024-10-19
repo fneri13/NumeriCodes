@@ -1,12 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from .riemann_problem import RiemannProblem
+from NumericalCodes.riemann_problem import RiemannProblem
 import pickle
 
 
 class ShockTube:
     def __init__(self, x, t):
+        """
+        Initialize the problem with space and time arrays.
+        """
         self.xNodes = x
         self.nNodes = len(x)
         self.dx = x[1]-x[0]
@@ -57,6 +60,14 @@ class ShockTube:
         dictIn['Energy'] = dictIn['Pressure'] / (self.gmma - 1) / dictIn['Density']
         for name in self.solutionNames:
             self.solution[name][:, 0] = self.CopyInitialState(dictIn[name][0], dictIn[name][1])
+    
+    def InitialConditionsArrays(self, dictIn):
+        """
+        Initialize the conditions based on initial state, defined by arrays
+        """
+        dictIn['Energy'] = dictIn['Pressure'] / (self.gmma - 1) / dictIn['Density']
+        for name in self.solutionNames:
+            self.solution[name][:, 1:-1] = dictIn[name]
 
 
     def CopyInitialState(self, fL, fR):

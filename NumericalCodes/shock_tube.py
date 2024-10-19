@@ -60,6 +60,14 @@ class ShockTube:
         dictIn['Energy'] = dictIn['Pressure'] / (self.gmma - 1) / dictIn['Density']
         for name in self.solutionNames:
             self.solution[name][:, 0] = self.CopyInitialState(dictIn[name][0], dictIn[name][1])
+    
+    def InitialConditionsArrays(self, dictIn):
+        """
+        Initialize the conditions based on initial state, defined by arrays
+        """
+        dictIn['Energy'] = dictIn['Pressure'] / (self.gmma - 1) / dictIn['Density']
+        for name in self.solutionNames:
+            self.solution[name][:, 1:-1] = dictIn[name]
 
 
     def CopyInitialState(self, fL, fR):
