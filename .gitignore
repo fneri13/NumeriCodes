@@ -7,7 +7,7 @@
 node_modules/
 dist/
 venv/
-unsflow.egg-info/
+*.egg-info/
 
 # Compiled Java class files
 *.class
