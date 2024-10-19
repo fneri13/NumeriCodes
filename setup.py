@@ -7,7 +7,8 @@ setup(
     description='Numerical codes for simple CFD',
     install_requires=[
         'numpy',
-        'matplotlib'
+        'matplotlib',
+        'scipy'
     ],
     packages=find_packages(),
 )

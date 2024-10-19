@@ -1,0 +1,1 @@
+Set of test-cases to check the correct implementation of blockage terms for turbomachinery-related studies.

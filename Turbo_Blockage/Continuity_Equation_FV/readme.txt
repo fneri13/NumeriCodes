@@ -1,0 +1,2 @@
+Integrate 1D steady continuity equation to show the difference between consistent and non-consistent blockage treatment.
+1D finite volume with axial cell shrinkage added to the previous test-case given in Continuity_Equation_FD

@@ -8,6 +8,7 @@ node_modules/
 dist/
 venv/
 *.egg-info/
+build/
 
 # Compiled Java class files
 *.class
