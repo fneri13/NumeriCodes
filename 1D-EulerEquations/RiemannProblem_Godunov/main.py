@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-sys.path.append("../")
-from src.shock_tube import ShockTube
-
+from NumericalCodes.shock_tube import ShockTube
 
 """
 INPUT PARAMETERS FOR THE SHOCK-TUBE PROBLEM
@@ -34,12 +31,12 @@ inCondDict = {'Density': np.array([RHOL, RHOR]), 'Velocity': np.array([UL, UR]),
 tube.InstantiateSolutionArrays()
 tube.InstantiateSolutionArraysConservatives()
 tube.InitialConditionsLeftRight(inCondDict)
-tube.SetBoundaryConditions('transparent', 0)
+tube.SetBoundaryConditions('reflective', 0)
 
 tube.SolveSystem(flux_method='Godunov')
-tube.SaveSolution(folder_name='solutions', file_name='SodsTest_transparent_tMax_%.1f' %TIME_MAX)
+# tube.SaveSolution(folder_name='solutions', file_name='SodsTest_transparent_tMax_%.1f' %TIME_MAX)
 
-# tube.ShowAnimation()
+tube.ShowAnimation()
 
 
 

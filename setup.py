@@ -8,7 +8,8 @@ setup(
     install_requires=[
         'numpy',
         'matplotlib',
-        'scipy'
+        'scipy',
+        'numba'
     ],
     packages=find_packages(),
 )

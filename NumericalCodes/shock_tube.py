@@ -156,8 +156,15 @@ class ShockTube:
         self.BCtype = BCs
         if BCs=='reflective':
             self.SetReflectiveBoundaryConditions(it)
+        elif BCs=='transparent':
+            self.SetTransparentBoundaryConditions(it)
         else:
             raise ValueError("Unknown boundary condition type")
+        
+        # update also the conservative variable arrays based on what has been done on the primitive
+        self.solutionCons['u1'][:, it], self.solutionCons['u2'][:, it], self.solutionCons['u3'][:, it] = (
+                    self.GetConsFromPrim(self.solution['Density'][:, it], self.solution['Velocity'][:, it], self.solution['Pressure'][:, it]))
+
 
 
     def SetReflectiveBoundaryConditions(self, iTime):
@@ -176,10 +183,23 @@ class ShockTube:
 
         self.solution['Energy'][0, iTime] = self.solution['Energy'][1, iTime]
         self.solution['Energy'][-1, iTime] = self.solution['Energy'][-2, iTime]
+    
+    def SetTransparentBoundaryConditions(self, iTime):
+        """
+        Set the boundary conditions, making use of the halo nodes (index 0 and -1 along axis 0), and then update the conservative variables
+        :parameter iTime: time instant index of the simulation
+        """
+        self.solution['Density'][0, iTime] = self.solution['Density'][1, iTime]
+        self.solution['Density'][-1, iTime] = self.solution['Density'][-2, iTime]
 
-        self.solutionCons['u1'][:, iTime], self.solutionCons['u2'][:, iTime], self.solutionCons['u3'][:, iTime] = (
-                    self.GetConsFromPrim(self.solution['Density'][:, iTime], self.solution['Velocity'][:, iTime], self.solution['Pressure'][:, iTime]))
+        self.solution['Velocity'][0, iTime] = self.solution['Velocity'][1, iTime]
+        self.solution['Velocity'][-1, iTime] = self.solution['Velocity'][-2, iTime]
 
+        self.solution['Pressure'][0, iTime] = self.solution['Pressure'][1, iTime]
+        self.solution['Pressure'][-1, iTime] = self.solution['Pressure'][-2, iTime]
+
+        self.solution['Energy'][0, iTime] = self.solution['Energy'][1, iTime]
+        self.solution['Energy'][-1, iTime] = self.solution['Energy'][-2, iTime]
 
     def SolveSystem(self, flux_method):
         """
