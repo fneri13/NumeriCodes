@@ -22,7 +22,7 @@ timeVectors = {'Test1': 0.25,
                'Test4': 0.035,
                'Test5': 0.035}
 
-for key in ['Test1']:
+for key in initialCond.keys():
     inCond = initialCond[key]
     TIME_MAX = timeVectors[key]
     x = np.linspace(0, LENGTH, NX)
@@ -31,7 +31,7 @@ for key in ['Test1']:
     RHOL, RHOR = inCond[0], inCond[1]
     UL, UR = inCond[2], inCond[3]
     approxSpeed = np.sqrt(1.4*np.max([PL, PR])/np.min([RHOL, RHOR]))  # brutal approximation max eigenvalue
-    CFLmax = 0.5  # conservative CFL
+    CFLmax = 0.25  # conservative CFL
     dtMax = CFLmax* dx / approxSpeed
     nt = int(TIME_MAX/dtMax)
     t = np.linspace(0, TIME_MAX, nt)
@@ -44,8 +44,8 @@ for key in ['Test1']:
     tube.InitialConditionsLeftRight(inCondDict)
     tube.SetBoundaryConditions('reflective', 0)
 
-    tube.SolveSystem(flux_method='WAF')
-    tube.SaveSolution(folder_name='solutions_God', file_name=key)
+    tube.SolveSystem(flux_method='Roe')
+    tube.SaveSolution(folder_name='solutions_Roe', file_name=key)
 
     # tube.ShowAnimation()
 

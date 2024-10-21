@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from NumericalCodes.riemann_problem import RiemannProblem
+from NumericalCodes.roe_scheme import RoeScheme
 import pickle
 
 
@@ -230,13 +231,13 @@ class ShockTube:
         """
         Compute the flux vector given a certain numerical scheme
         """
+        rhoL = self.solution['Density'][il, it]
+        rhoR = self.solution['Density'][ir, it]
+        uL = self.solution['Velocity'][il, it]
+        uR = self.solution['Velocity'][ir, it]
+        pL = self.solution['Pressure'][il, it]
+        pR = self.solution['Pressure'][ir, it]
         if flux_method=='Godunov':
-            rhoL = self.solution['Density'][il, it]
-            rhoR = self.solution['Density'][ir, it]
-            uL = self.solution['Velocity'][il, it]
-            uR = self.solution['Velocity'][ir, it]
-            pL = self.solution['Pressure'][il, it]
-            pR = self.solution['Pressure'][ir, it]
             nx, nt = 51, 51
             x = np.linspace(-self.dx/2, self.dx/2, nx)
             t = np.linspace(0, self.dt, nt)
@@ -249,14 +250,7 @@ class ShockTube:
             u1, u2, u3 = self.GetConsFromPrim(rho, u, p)
             u1AVG, u2AVG, u3AVG = np.sum(u1)/len(u1), np.sum(u2)/len(u2), np.sum(u3)/len(u3)
             flux = self.EulerFlux(u1AVG, u2AVG, u3AVG)
-            return flux
         elif flux_method=='WAF':
-            rhoL = self.solution['Density'][il, it]
-            rhoR = self.solution['Density'][ir, it]
-            uL = self.solution['Velocity'][il, it]
-            uR = self.solution['Velocity'][ir, it]
-            pL = self.solution['Pressure'][il, it]
-            pR = self.solution['Pressure'][ir, it]
             nx, nt = 51, 51
             x = np.linspace(-self.dx/2, self.dx/2, nx)
             t = np.linspace(0, self.dt, nt)
@@ -269,10 +263,17 @@ class ShockTube:
             u1, u2, u3 = self.GetConsFromPrim(rho, u, p)
             u1AVG, u2AVG, u3AVG = np.sum(u1)/len(u1), np.sum(u2)/len(u2), np.sum(u3)/len(u3)
             flux = self.EulerFlux(u1AVG, u2AVG, u3AVG)
-            return flux
-
+        elif flux_method=='Roe':
+            roe = RoeScheme(rhoL, rhoR, uL, uR, pL, pR)
+            roe.ComputeAveragedVariables()
+            roe.ComputeAveragedEigenvalues()
+            roe.ComputeAveragedEigenvectors()
+            roe.ComputeWaveStrengths()
+            flux = roe.ComputeFlux()
         else:
             raise ValueError('Unknown flux method')
+        
+        return flux
 
     def EulerFlux(self, u1, u2, u3):
         """
