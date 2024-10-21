@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-sys.path.append("../")
-from src.shock_tube import ShockTube
+from NumericalCodes.shock_tube import ShockTube
 
 """
 INPUT PARAMETERS FOR THE SHOCK-TUBE PROBLEM
@@ -17,14 +15,13 @@ initialCond = {'Test1': [1.0, 0.125, 0.0, 0.0, 1.0, 0.1],
                'Test4': [1.0, 1.0, 0.0, 0.0, 0.01, 100.0],
                'Test5': [5.99924, 5.99242, 19.5975, -6.19633, 460.894, 46.0950]}
 
-nt = 20
 timeVectors = {'Test1': 0.25,
                'Test2': 0.15,
                'Test3': 0.012,
                'Test4': 0.035,
                'Test5': 0.035}
 
-for key in ['Test5']:
+for key in initialCond.keys():
     inCond = initialCond[key]
     TIME_MAX = timeVectors[key]
     x = np.linspace(0, LENGTH, NX)
@@ -33,7 +30,7 @@ for key in ['Test5']:
     RHOL, RHOR = inCond[0], inCond[1]
     UL, UR = inCond[2], inCond[3]
     approxSpeed = np.sqrt(1.4*np.max([PL, PR])/np.min([RHOL, RHOR]))  # brutal approximation max eigenvalue
-    CFLmax = 0.1  # conservative CFL
+    CFLmax = 0.2  # conservative CFL
     dtMax = CFLmax* dx / approxSpeed
     nt = int(TIME_MAX/dtMax)
     t = np.linspace(0, TIME_MAX, nt)
