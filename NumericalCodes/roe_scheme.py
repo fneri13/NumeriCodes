@@ -38,7 +38,7 @@ class RoeScheme:
     
     def ComputeAveragedVariables(self):
         """
-        Compute the roe avg variables for the 1D Euler equations
+        Compute the Roe averaged variables for the x-split 3D Euler equations
         """
         self.rhoAVG = sqrt(self.rhoL*self.rhoR)
         self.uAVG = (sqrt(self.rhoL)*self.uL + sqrt(self.rhoR)*self.uR) / (sqrt(self.rhoL)+ sqrt(self.rhoR))
@@ -47,20 +47,29 @@ class RoeScheme:
         self.hAVG = (sqrt(self.rhoL)*self.htL + sqrt(self.rhoR)*self.htR) / (sqrt(self.rhoL)+ sqrt(self.rhoR))
         self.aAVG = sqrt((self.gmma-1)*(self.hAVG-0.5*self.uAVG**2))
     
+    
     def ComputeTotalEnthalpy(self, rho, u, p):
         e = p/(self.gmma-1)/rho
         et = 0.5**u**2 + e
         ht = et+p/rho
         return ht
     
+
     def ComputeAveragedEigenvalues(self):
+        """
+        Compute eigenvalues of the averaged Jacobian
+        """
         self.lambda_vec = np.array([self.uAVG-self.aAVG, 
                                     self.uAVG,
                                     self.uAVG,
                                     self.uAVG, 
                                     self.uAVG+self.aAVG])
     
+
     def ComputeAveragedEigenvectors(self):
+        """
+        Compute eigenvector matrix of the averaged flux Jacobian
+        """
         self.eigenvector_mat = np.zeros((5, 5))
         
         self.eigenvector_mat[0, 0] = 1
@@ -78,11 +87,12 @@ class RoeScheme:
         self.eigenvector_mat[1, 4] = self.uAVG+self.aAVG
         self.eigenvector_mat[4, 4] = self.hAVG+self.uAVG*self.aAVG
     
+
     def ComputeWaveStrengths(self):
+        """
+        Characteristic jumps
+        """
         self.alphas = np.zeros(5)
-        # self.alphas[1] = (self.gmma-1)/self.aAVG**2*(self.deltaU1*(self.hAVG-self.uAVG**2)+self.uAVG*self.deltaU2-self.deltaU3) 
-        # self.alphas[0] = 1/2/self.aAVG * (self.deltaU1*(self.uAVG+self.aAVG)-self.deltaU2-self.aAVG*self.alphas[1])
-        # self.alphas[2] = self.deltaU1-(self.alphas[0]+self.alphas[1])
         self.alphas[0] = 1/2/self.aAVG**2 *(self.pR-self.pL-self.rhoAVG*self.aAVG*(self.uR-self.uL))
         self.alphas[1] = self.rhoR-self.rhoL - (self.pR-self.pL)/self.aAVG**2
         self.alphas[2] = self.rhoAVG*self.vAVG
@@ -90,13 +100,10 @@ class RoeScheme:
         self.alphas[4] = 1/2/self.aAVG**2*(self.pR-self.pL + self.rhoAVG*self.aAVG*(self.uR-self.uL))
 
 
-
-
-
-
     def ComputeFlux(self):
-        # let's use the formula 11.27 for the flux
-
+        """
+        Compute the Roe flux
+        """
         fluxL = self.EulerFlux(self.u1L, self.u2L, self.u3L)
         fluxR = self.EulerFlux(self.u1R, self.u2R, self.u3R)
         fluxRoe = 0.5*(fluxL+fluxR)
