@@ -138,17 +138,27 @@ class RiemannProblem:
             # print('The left wave is a rarefaction wave')
             self.left_wave = 'rarefaction'
 
-    def Solve(self, domain='global'):
+    def Solve(self, space_domain='global', time_domain='global'):
         """
         Sample the solution in the x,t domains. Follows methodology given in the book Riemann solvers by Toro.
         :return:
         """
-        if domain=='global':
+        if space_domain=='global':
             self.ix_values = range(self.nx)
-        elif domain=='interface':
+        elif space_domain=='interface':
             self.ix_values = [self.nx//2]
+        else:
+            raise ValueError('Unknown value of space_domain')
+        
+        if time_domain=='global':
+            self.it_values = range(1, self.nt)
+        elif time_domain=='interface':
+            self.it_values = [self.nt//2]
+        else:
+            raise ValueError('Unknown value of time_domain')
 
-        for it in range(1, self.nt):
+
+        for it in self.it_values:
             for ix in self.ix_values:
                 S = self.x[ix] / self.t[it]
                 if S < self.uStar:  # we are at the left of the contact discontinuity
@@ -352,6 +362,15 @@ class RiemannProblem:
         rho = self.rho[self.ix_values, :].flatten()
         u = self.u[self.ix_values, :].flatten()
         p = self.p[self.ix_values, :].flatten()
+        return rho, u, p
+    
+    def GetSolutionInSpace(self):
+        """
+        Return the arrays storing the solutions in space
+        """
+        rho = self.rho[:, self.it_values].flatten()
+        u = self.u[:, self.it_values].flatten()
+        p = self.p[:, self.it_values].flatten()
         return rho, u, p
 
 

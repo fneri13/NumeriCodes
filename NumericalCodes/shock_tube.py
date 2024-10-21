@@ -244,12 +244,33 @@ class ShockTube:
             riem.InitializeState([rhoL, rhoR, uL, uR, pL, pR])
             riem.InitializeSolutionArrays()
             riem.ComputeStarRegion()
-            riem.Solve(domain='interface')
+            riem.Solve(space_domain='interface', time_domain='global') # compute Riemann solution only at x=0, but on whole time instants
             rho, u, p = riem.GetSolutionInTime()
             u1, u2, u3 = self.GetConsFromPrim(rho, u, p)
             u1AVG, u2AVG, u3AVG = np.sum(u1)/len(u1), np.sum(u2)/len(u2), np.sum(u3)/len(u3)
             flux = self.EulerFlux(u1AVG, u2AVG, u3AVG)
             return flux
+        elif flux_method=='WAF':
+            rhoL = self.solution['Density'][il, it]
+            rhoR = self.solution['Density'][ir, it]
+            uL = self.solution['Velocity'][il, it]
+            uR = self.solution['Velocity'][ir, it]
+            pL = self.solution['Pressure'][il, it]
+            pR = self.solution['Pressure'][ir, it]
+            nx, nt = 51, 51
+            x = np.linspace(-self.dx/2, self.dx/2, nx)
+            t = np.linspace(0, self.dt, nt)
+            riem = RiemannProblem(x, t)
+            riem.InitializeState([rhoL, rhoR, uL, uR, pL, pR])
+            riem.InitializeSolutionArrays()
+            riem.ComputeStarRegion()
+            riem.Solve(space_domain='global', time_domain='interface') # compute Riemann solution only at deltaT/2, but on whole domain
+            rho, u, p = riem.GetSolutionInSpace()
+            u1, u2, u3 = self.GetConsFromPrim(rho, u, p)
+            u1AVG, u2AVG, u3AVG = np.sum(u1)/len(u1), np.sum(u2)/len(u2), np.sum(u3)/len(u3)
+            flux = self.EulerFlux(u1AVG, u2AVG, u3AVG)
+            return flux
+
         else:
             raise ValueError('Unknown flux method')
 

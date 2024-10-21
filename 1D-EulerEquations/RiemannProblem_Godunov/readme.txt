@@ -1,1 +1,1 @@
-Solve the 1D-Euler equations by means of the Godunov scheme making use of the solution of local Riemann problem at cells interfaces
+Solve the 1D-Euler equations by means of the Godunov first order scheme 
