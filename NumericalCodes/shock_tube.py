@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 from NumericalCodes.riemann_problem import RiemannProblem
 from NumericalCodes.roe_scheme import RoeScheme
+from NumericalCodes.muscl_hancock import MusclHancock
 import pickle
 
 
@@ -212,11 +213,14 @@ class ShockTube:
         for it in range(1, self.nTime):
             print('Time step: %i of %i' %(it, self.nTime))
             for ix in range(1, self.nNodesHalo-1):
-
-                fluxVec_left = self.ComputeFluxVector(ix-1, ix, it-1, flux_method)
-                fluxVec_right = self.ComputeFluxVector(ix, ix+1, it-1, flux_method)
+                if ix==1: # only for the first node compute left and right fluxes
+                    fluxVec_left = self.ComputeFluxVector(ix-1, ix, it-1, flux_method)
+                    fluxVec_right = self.ComputeFluxVector(ix, ix+1, it-1, flux_method)
+                else:
+                    fluxVec_left = fluxVec_right  # make use of the previously calculated flux (conservative approach)
+                    fluxVec_right = self.ComputeFluxVector(ix, ix+1, it-1, flux_method)
+                
                 fluxVec_net = fluxVec_left-fluxVec_right
-
                 cons['u1'][ix, it] = cons['u1'][ix, it-1] + dt/dx*fluxVec_net[0]
                 cons['u2'][ix, it] = cons['u2'][ix, it-1] + dt/dx*fluxVec_net[1]
                 cons['u3'][ix, it] = cons['u3'][ix, it-1] + dt/dx*fluxVec_net[2]
@@ -270,6 +274,20 @@ class ShockTube:
             roe.ComputeAveragedEigenvectors()
             roe.ComputeWaveStrengths()
             flux = roe.ComputeFlux()
+        elif flux_method=='MUSCL-Hancock':
+            # be careful when you are at the border, since in reality you would need two halo nodes, not just one
+            if il>1 and ir<self.nNodesHalo-2:
+                rhoLL, rhoRR = self.solution['Density'][il-1, it], self.solution['Density'][ir+1, it]
+                uLL, uRR = self.solution['Velocity'][il-1, it], self.solution['Velocity'][ir+1, it]
+                pLL, pRR = self.solution['Pressure'][il-1, it], self.solution['Pressure'][ir+1, it]
+            else: # no extrapolation for extreme cells over the halo nodes
+                rhoLL, rhoRR = rhoL, rhoR
+                uLL, uRR = uL, uR
+                pLL, pRR = pL, pR
+            mhck = MusclHancock(rhoLL, rhoL, rhoR, rhoRR, uLL, uL, uR, uRR, pLL, pL, pR, pRR, self.dx)
+            mhck.ReconstructInterfaceValues()
+            mhck.EvolveInterfaceValues(self.dx, self.dt)
+            flux = mhck.ComputeRoeFlux()
         else:
             raise ValueError('Unknown flux method')
         
