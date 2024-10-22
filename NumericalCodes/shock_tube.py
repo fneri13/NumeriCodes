@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pickle
 from NumericalCodes.riemann_problem import RiemannProblem
 from NumericalCodes.roe_scheme import RoeScheme
 from NumericalCodes.muscl_hancock import MusclHancock
-import pickle
+
 
 
 class ShockTube:
@@ -32,6 +33,9 @@ class ShockTube:
         self.xNodesVirt[1:-1] = self.xNodes
         self.xNodesVirt[0] = self.xNodes[0]-self.dx
         self.xNodesVirt[-1] = self.xNodes[-1]+self.dx
+        self.blockage = np.ones_like(self.xNodesVirt)
+        self.cell_volumes = np.zeros(self.nNodesHalo)+self.dx
+        self.int_surface = np.zeros(self.nInterfaces)+1
 
 
     def InstantiateSolutionArrays(self):
@@ -160,12 +164,29 @@ class ShockTube:
             self.SetReflectiveBoundaryConditions(it)
         elif BCs=='transparent':
             self.SetTransparentBoundaryConditions(it)
+        elif BCs=='periodic':
+            self.SetPeriodicBoundaryConditions(it)
         else:
             raise ValueError("Unknown boundary condition type")
         
         # update also the conservative variable arrays based on what has been done on the primitive
         self.solutionCons['u1'][:, it], self.solutionCons['u2'][:, it], self.solutionCons['u3'][:, it] = (
                     self.GetConsFromPrim(self.solution['Density'][:, it], self.solution['Velocity'][:, it], self.solution['Pressure'][:, it]))
+
+
+    def ComputeBlockagedGeometry(self, b):
+        
+        #shrink the cell volumes
+        for iNode in range(1, self.nNodesHalo-1):
+            iBlock = iNode-1
+            self.cell_volumes[iNode] *= b[iBlock]
+
+        # shrink the surfaces area
+        for iInt in range(self.nInterfaces):
+            if iInt>0 and iInt<self.nInterfaces-1:  # no need to treat the extremes, since the blockage is not there probably
+                block = 0.5*(b[iInt-1]+b[iInt])
+                self.int_surface[iInt] *= block
+
 
 
 
@@ -202,6 +223,23 @@ class ShockTube:
 
         self.solution['Energy'][0, iTime] = self.solution['Energy'][1, iTime]
         self.solution['Energy'][-1, iTime] = self.solution['Energy'][-2, iTime]
+    
+    def SetPeriodicBoundaryConditions(self, iTime):
+        """
+        Set the boundary conditions, making use of the halo nodes (index 0 and -1 along axis 0), and then update the conservative variables
+        :parameter iTime: time instant index of the simulation
+        """
+        self.solution['Density'][0, iTime] = self.solution['Density'][-2, iTime]
+        self.solution['Density'][-1, iTime] = self.solution['Density'][1, iTime]
+
+        self.solution['Velocity'][0, iTime] = self.solution['Velocity'][-2, iTime]
+        self.solution['Velocity'][-1, iTime] = self.solution['Velocity'][1, iTime]
+
+        self.solution['Pressure'][0, iTime] = self.solution['Pressure'][-2, iTime]
+        self.solution['Pressure'][-1, iTime] = self.solution['Pressure'][1, iTime]
+
+        self.solution['Energy'][0, iTime] = self.solution['Energy'][-2, iTime]
+        self.solution['Energy'][-1, iTime] = self.solution['Energy'][1, iTime]
 
     def SolveSystem(self, flux_method):
         """
@@ -220,10 +258,14 @@ class ShockTube:
                     fluxVec_left = fluxVec_right  # make use of the previously calculated flux (conservative approach)
                     fluxVec_right = self.ComputeFluxVector(ix, ix+1, it-1, flux_method)
                 
+                fluxVec_left *= self.int_surface[ix-1]
+                fluxVec_right *= self.int_surface[ix]
+
                 fluxVec_net = fluxVec_left-fluxVec_right
-                cons['u1'][ix, it] = cons['u1'][ix, it-1] + dt/dx*fluxVec_net[0]
-                cons['u2'][ix, it] = cons['u2'][ix, it-1] + dt/dx*fluxVec_net[1]
-                cons['u3'][ix, it] = cons['u3'][ix, it-1] + dt/dx*fluxVec_net[2]
+                
+                cons['u1'][ix, it] = cons['u1'][ix, it-1] + dt/self.cell_volumes[ix]*fluxVec_net[0]
+                cons['u2'][ix, it] = cons['u2'][ix, it-1] + dt/self.cell_volumes[ix]*fluxVec_net[1]
+                cons['u3'][ix, it] = cons['u3'][ix, it-1] + dt/self.cell_volumes[ix]*fluxVec_net[2]
 
                 prim['Density'][ix, it], prim['Velocity'][ix, it], prim['Pressure'][ix, it], prim['Energy'][ix, it] = \
                     self.GetPrimitivesFromCons(cons['u1'][ix, it], cons['u2'][ix, it], cons['u3'][ix, it])
