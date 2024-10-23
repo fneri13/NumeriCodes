@@ -36,15 +36,33 @@ class AdvectionEquation:
         self.cell_volumes = np.zeros(self.nNodesHalo)+self.dx
         self.int_surface = np.zeros(self.nInterfaces)+1
 
-    def InstantiateInitialCondition(self, wave_type='square'):
+    def InstantiateInitialCondition(self, wave_type, wave_length):
         """
-        Initialize the initial condition, on the first fourth of x-domain
+        Initialize the initial condition, on the first wave_length of x-domain
         """
         L = self.xNodes[-1]-self.xNodes[0]
         if wave_type=='square':
             for i in range(len(self.u)):
-                if self.xNodesVirt[i] >0 and self.xNodesVirt[i] <=L/4:
+                if self.xNodesVirt[i] >0 and self.xNodesVirt[i] < wave_length:
                     self.u[i, 0] = 1
+        elif wave_type=='sine':
+            for i in range(len(self.u)):
+                if self.xNodesVirt[i] >0 and self.xNodesVirt[i] < wave_length:
+                    nwaves = 1
+                    self.u[i, 0] = np.sin(nwaves*np.pi*self.xNodes[i]/wave_length)
+        elif wave_type=='triangular':
+            for i in range(len(self.u)):
+                if self.xNodesVirt[i] >0 and self.xNodesVirt[i] < wave_length/2:
+                    slope = 1/(wave_length/2)
+                    self.u[i, 0] = self.xNodes[i]*slope
+                elif self.xNodesVirt[i] >=wave_length/2 and self.xNodesVirt[i] < wave_length:
+                    slope = -1/(wave_length/2)
+                    self.u[i, 0] = 1+(self.xNodes[i]-wave_length/2)*slope
+        elif wave_type=='saw-tooth':
+            for i in range(len(self.u)):
+                if self.xNodesVirt[i] >0 and self.xNodesVirt[i] <= wave_length:
+                    slope = 1/(wave_length)
+                    self.u[i, 0] = self.xNodes[i]*slope
         else:
             raise ValueError('unknown wave_type parameter')
         
@@ -61,7 +79,8 @@ class AdvectionEquation:
         """
         plt.figure()
         plt.plot(self.xNodesVirt, self.u_analytic[:, iTime], label='Reference')
-        plt.plot(self.xNodesVirt, self.u[:, iTime], label='%s' %self.method)
+        try: plt.plot(self.xNodesVirt, self.u[:, iTime], label='%s' %self.method)
+        except: pass
 
         plt.title('Time %.3f' % self.timeVec[iTime])
         plt.xlabel('x')
@@ -75,7 +94,7 @@ class AdvectionEquation:
 
     def SetBoundaryConditions(self, BCs, it):
         """
-        Set the correct boundary condition type
+        Set the correct boundary condition type. Only periodic for advection equation
         """
         self.BCtype = BCs
         if BCs=='periodic':
@@ -109,7 +128,8 @@ class AdvectionEquation:
 
     def SolveSystem(self, method):
         """
-        Solve the advection using a certain method.
+        Solve the advection using a certain method. Choose between: Lax-Wendroff, Godunov-upwind, Godunov-centred,
+        FORCE, Lax-Friedrichs
         """
         self.method = method
         dx, dt = self.dx, self.dt
@@ -167,12 +187,10 @@ class AdvectionEquation:
             plt.plot(self.xNodesVirt, self.u[:, it], label='%s' %self.method)
             plt.xlabel('x')
             plt.ylabel('u')
-            plt.ylim([-0.2, 1.2])
             plt.grid(alpha=0.3)
             plt.legend()
 
             plt.title('Time %.3f' % self.timeVec[it])
-
             plt.pause(1e-3)
     
 
@@ -184,7 +202,7 @@ class AdvectionEquation:
         full_path = folder_name+'/'+file_name+'.pik'
         with open(full_path, 'wb') as file:
             pickle.dump(self, file)
-        print('Solution save to ' + full_path + ' !')
+        print('Solution saved to ' + full_path + ' !')
 
 
 

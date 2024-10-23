@@ -7,9 +7,9 @@ INPUT PARAMETERS
 """
 LENGTH = 5
 NX = 500
-TIME_MAX = 5
-CFL = 0.5
-A_SPEED = 2
+TIME_MAX = 2.5
+CFL = 0.4
+A_SPEED = 3
 
 
 """
@@ -22,11 +22,10 @@ Nt = int(TIME_MAX//dt)
 t = np.linspace(0, TIME_MAX, Nt)
 
 adv = AdvectionEquation(x, t, CFL)
-adv.InstantiateInitialCondition('square')
+adv.InstantiateInitialCondition('saw-tooth', LENGTH/3)
 adv.SetBoundaryConditions('periodic', 0)
-adv.SolveSystem(method='Lax-Wendroff')
+adv.SolveSystem(method='FORCE')
 adv.ShowAnimation()
-adv.PlotSolution(Nt-1)
 
 
 
