@@ -60,7 +60,8 @@ class AdvectionEquation:
         :return:
         """
         plt.figure()
-        plt.plot(self.xNodesVirt, self.u[:, iTime], '-C0o', ms=2)
+        plt.plot(self.xNodesVirt, self.u_analytic[:, iTime], label='Reference')
+        plt.plot(self.xNodesVirt, self.u[:, iTime], label='%s' %self.method)
 
         plt.title('Time %.3f' % self.timeVec[iTime])
         plt.xlabel('x')

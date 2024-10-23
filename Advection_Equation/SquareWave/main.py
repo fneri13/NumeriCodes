@@ -23,10 +23,11 @@ t = np.linspace(0, TIME_MAX, Nt)
 
 adv = AdvectionEquation(x, t, CFL)
 adv.InstantiateInitialCondition('square')
-adv.PlotSolution(0)
 adv.SetBoundaryConditions('periodic', 0)
 adv.SolveSystem(method='Lax-Wendroff')
 adv.ShowAnimation()
+adv.PlotSolution(Nt-1)
+
 
 
 
